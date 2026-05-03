@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Расчет ЗП - Облачная версия</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #eef2f5;
+            margin: 0;
+            padding: 12px;
+            color: #1e2a3a;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px 16px;
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+        }
+        h2 { text-align: center; color: #1e4663; margin-top: 0; }
+        .section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #5e7a93;
+            margin: 24px 0 12px 0;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+        input, select, textarea {
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px 16px;
+            border-radius: 14px;
+            font-weight: 600;
+            border: none;
+            background: #f1f5f9;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover { opacity: 0.85; transform: translateY(-1px); }
+        button:active { transform: scale(0.96); }
+        .add-btn { background: #28a745; color: white; width: 100%; padding: 12px; }
+        .btn-del-emp { background: #dc3545; color: white; margin-left: 6px; }
+        .btn-add-emp { background: #007bff; color: white; }
+        .btn-payslip { background: #8b5cf6; color: white; margin-left: 10px; }
+        .btn-telegram { background: #26A5E4; color: white; }
+        .btn-sync { background: #059669; color: white; }
+        .btn-refresh { background: #4b5563; color: white; }
+        .table-wrapper { overflow-x: auto; margin: 20px 0; border-radius: 20px; border: 1px solid #e9edf2; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #ecf3fa; }
+        th { background: #f8fafd; }
+        .edit-btn { background: #ffc107; }
+        .save-btn { background: #28a745; color: white; }
+        .delete-btn { background: #dc3545; color: white; }
+        .cancel-btn { background: #6c757d; color: white; }
+        .period-summary { background: #f0f6fe; border-radius: 20px; padding: 16px; margin-top: 20px; border-left: 6px solid #007bff; }
+        .period-block { background: white; border-radius: 16px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .flex-btns { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; align-items: center; }
+        .telegram-settings, .penalty-block { background: #e8f4fd; border-radius: 20px; padding: 16px; margin: 15px 0; border: 1px solid #bddff5; }
+        .status-msg { font-size: 12px; margin-top: 8px; padding: 6px; border-radius: 8px; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-info { background: #cce5ff; color: #004085; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .penalty-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .penalty-table th, .penalty-table td { border: 1px solid #ccc; padding: 6px; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            width: 95%;
+            max-width: 900px;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 20px; }
+        .close-modal { background: none; font-size: 28px; cursor: pointer; padding: 0; line-height: 1; }
+        .military-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .military-table th, .military-table td { border: 1px solid #000; padding: 8px; text-align: left; }
+        .military-table .right { text-align: right; }
+        .signature-block { margin-top: 30px; display: flex; justify-content: space-between; font-size: 12px; border-top: 1px dashed #333; padding-top: 15px; }
+        .print-btn { background: #2c3e66; color: white; padding: 8px 20px; margin-top: 20px; }
+        .sync-indicator { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f1f5f9; border-radius: 16px; margin-bottom: 12px; }
+        .sync-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+        .sync-dot.syncing { background: #eab308; animation: blink 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @media (max-width: 650px) {
+            .controls-grid { grid-template-columns: 1fr 1fr; }
+            .full-width { grid-column: span 2; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border: 1px solid #e2edf7; margin-bottom: 16px; border-radius: 20px; background: white; padding: 10px; }
+            td { border: none; position: relative; padding-left: 40%; text-align: right; display: flex; justify-content: space-between; align-items: center; }
+            td:before { content: attr(data-label); font-weight: 700; width: 45%; text-align: left; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>☁️ Расчет заработной платы (Облачная версия)</h2>
+    <p style="text-align:center; margin-top:-10px; font-size:14px;">📆 ЗП за периоды 1–15 / 16–31 | Данные синхронизируются между всеми пользователями</p>
+
+    <!-- Индикатор синхронизации -->
+    <div class="sync-indicator">
+        <div id="syncDot" class="sync-dot"></div>
+        <span id="syncStatusText" style="font-size: 13px;">Синхронизация с облаком...</span>
+        <button onclick="syncWithCloud()" style="margin-left: auto; padding: 4px 12px; font-size: 12px;">🔄 Синхронизировать</button>
+        <button onclick="loadFromCloud()" style="padding: 4px 12px; font-size: 12px;">📥 Загрузить</button>
+    </div>
+
+    <!-- Сотрудники -->
+    <div class="section-title">👥 Сотрудники</div>
+    <div class="controls-grid">
+        <div class="input-group">
+            <label>Выбрать сотрудника</label>
+            <div style="display: flex;">
+                <select id="employeeSelect" onchange="changeEmployee()" style="flex:1"></select>
+                <button class="btn-del-emp" onclick="deleteEmployee()">🗑️</button>
+                <button class="btn-payslip" onclick="openPayslip()">📄 Расчётный лист</button>
+            </div>
+        </div>
+        <div class="input-group">
+            <label>Новый сотрудник</label>
+            <div style="display: flex; gap: 6px;">
+                <input type="text" id="newEmployeeName" placeholder="Имя" style="flex:1">
+                <button class="btn-add-emp" onclick="addEmployee()">➕</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Штрафы и поощрения -->
+    <div class="penalty-block">
+        <div style="font-weight:bold; margin-bottom:12px;">⚖️ Штрафы и поощрения для <span id="currentEmpPenaltyLabel">—</span></div>
+        <div style="background:#f8fafc; padding:8px; border-radius:12px; margin-bottom:12px; font-size:13px;">
+            📅 Применяются к выбранному фильтру: 
+            <span id="penaltyMonthYearLabel">(выберите месяц и год)</span>
+        </div>
+        <div class="controls-grid">
+            <div class="input-group"><label>Сумма (₽) или %</label><input type="number" id="penaltyAmount" placeholder="+1000 или -500"></div>
+            <div class="input-group"><label>Комментарий</label><input type="text" id="penaltyComment" placeholder="Причина"></div>
+            <div class="input-group"><label>Тип</label>
+                <select id="penaltyType">
+                    <option value="fix">Фиксированная сумма</option>
+                    <option value="percent">Процент от чистой выручки</option>
+                </select>
+            </div>
+            <div class="input-group"><label>Период</label>
+                <select id="penaltyPeriod">
+                    <option value="both">Оба периода</option>
+                    <option value="first">1-15 число</option>
+                    <option value="second">16-31 число</option>
+                </select>
+            </div>
+            <div class="input-group"><label>&nbsp;</label><button onclick="addPenaltyReward()">➕ Добавить</button></div>
+        </div>
+        <div id="penaltyList"></div>
+        <div style="font-size:12px; margin-top:8px;">💡 Отрицательная сумма = штраф, положительная = премия. Процент считается от чистой выручки.</div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="telegram-settings">
+        <div style="font-weight:bold; margin-bottom:12px;">🤖 TELEGRAM</div>
+        <div class="controls-grid">
+            <div class="input-group"><label>Bot Token</label><input type="text" id="botToken" value="8789579853:AAG1Pa5JLQH4qVe9z4Vga4BqCAjq5ONEYGM" readonly style="background:#f0f0f0;"></div>
+            <div class="input-group"><label>Telegram ID сотрудника</label><div style="display:flex; gap:6px;"><input type="text" id="employeeTelegramId" placeholder="123456789"><button class="btn-telegram" onclick="saveTelegramId()">💾 Сохранить</button></div></div>
+        </div>
+        <div class="flex-btns"><button class="btn-telegram" onclick="sendPayslipToTelegram()">📨 Отправить расчётный лист</button><button onclick="testTelegramConnection()">🔍 Тест</button></div>
+        <div id="telegramStatus" class="status-msg" style="display:none;"></div>
+    </div>
+
+    <!-- Фильтр месяц/год -->
+    <div class="section-title">📅 Фильтр</div>
+    <div class="controls-grid">
+        <div class="input-group"><label>Месяц</label><select id="archiveMonth" onchange="applyFilter()"><option value="all">Все</option><option value="0">Январь</option><option value="1">Февраль</option><option value="2">Март</option><option value="3">Апрель</option><option value="4">Май</option><option value="5">Июнь</option><option value="6">Июль</option><option value="7">Август</option><option value="8">Сентябрь</option><option value="9">Октябрь</option><option value="10">Ноябрь</option><option value="11">Декабрь</option></select></div>
+        <div class="input-group"><label>Год</label><select id="archiveYear" onchange="applyFilter()"></select></div>
+        <div class="input-group"><label>&nbsp;</label><button onclick="applyFilter()" style="background:#2c3e66; color:white;">Показать</button></div>
+    </div>
+
+    <!-- Новая смена -->
+    <div class="section-title">➕ Новая смена</div>
+    <div class="controls-grid">
+        <div class="input-group"><label>Дата</label><input type="date" id="shiftDate"></div>
+        <div class="input-group"><label>Выручка (₽)</label><input type="number" id="rev" placeholder="0"></div>
+        <div class="input-group"><label>Кальяны</label><input type="number" id="hook" placeholder="0"></div>
+        <div class="input-group"><label>Чай</label><input type="number" id="tea" placeholder="0"></div>
+        <div class="input-group"><label>Ставка (₽)</label><input type="number" id="rate" value="1500"></div>
+        <div class="full-width"><button class="add-btn" onclick="addShift()">✅ ДОБАВИТЬ СМЕНУ</button></div>
+    </div>
+
+    <!-- Таблица смен -->
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Дата</th><th>Выручка</th><th>Кальяны</th><th>Чай</th><th>Чистая</th><th>З/П</th><th>Действия</th></tr>
+            </thead>
+            <tbody id="shiftTable"></tbody>
+        </table>
+    </div>
+    <div id="periodStats" class="period-summary"></div>
+    <div class="flex-btns">
+        <button onclick="syncWithCloud()" class="btn-sync">☁️ Сохранить в облако</button>
+        <button onclick="exportToJSON()">💾 Экспорт (JSON)</button>
+        <button onclick="importFromJSON()">📂 Импорт (JSON)</button>
+        <button onclick="resetAllData()">⚠️ Сбросить всё</button>
+    </div>
+</div>
+
+<!-- Модальное окно расчётного листа -->
+<div id="payslipModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>📄 РАСЧЁТНЫЙ ЛИСТОК</h3><button class="close-modal" onclick="closePayslip()">×</button></div>
+        <div id="payslipBody"></div>
+        <div style="text-align:center;"><button class="print-btn" onclick="window.print()">🖨️ Распечатать / PDF</button></div>
+    </div>
+</div>
+
+<script>
+    ↓// ============== НАСТРОЙКА GOOGLE SHEETS ==============
+    // ⚠️ ВСТАВЬТЕ ВАШ URL ВЕБ-ПРИЛОЖЕНИЯ СЮДА:
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwwyrX43p8op0LCS_k6sOIFSODkCy1-NANk1w_1t7sTgaBoShdvnt2mvjAm-9yy7maV6A/exec";
+    // ⚠️ ВСТАВЬТЕ ID ВАШЕЙ ТАБЛИЦЫ СЮДА:
+    const SPREADSHEET_ID = "1WtbJQMOFbMEnjpM3UVuhIeNA5ejmYm-SCGoX0C4LqN8";
+    // ===================================================
+    
+    let employees = {};
+    let currentEmployee = "";
+    let editingIndex = -1;
+    let currentFilter = { month: 'all', year: 'all' };
+    let isSyncing = false;
+
+    document.getElementById('shiftDate').valueAsDate = new Date();
+    if(!localStorage.getItem('telegram_bot_token')) localStorage.setItem('telegram_bot_token', '8789579853:AAG1Pa5JLQH4qVe9z4Vga4BqCAjq5ONEYGM');
+
+    // Функции синхронизации с Google Sheets
+    async function loadFromCloud() {
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("ВАШ_URL")) {
+            showSyncStatus("⚠️ Настройте GOOGLE_SCRIPT_URL в коде!", "warning");
+            return;
+        }
+        
+        showSyncStatus("📡 Загрузка из облака...", "syncing");
+        isSyncing = true;
+        
+        try {
+            const url = `${GOOGLE_SCRIPT_URL}?action=load&spreadsheetId=${SPREADSHEET_ID}&t=${Date.now()}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data && Object.keys(data).length > 0) {
+                employees = data;
+                // Преобразуем старый формат в новый при необходимости
+                for (let name in employees) {
+                    if (!employees[name].penaltiesByMonth) {
+                        employees[name].penaltiesByMonth = {};
+                    }
+                    if (!employees[name].shifts) employees[name].shifts = [];
+                    if (!employees[name].payslipCounter) employees[name].payslipCounter = 0;
+                }
+                saveToLocal();
+                initSelect();
+                renderShifts();
+                showSyncStatus("✅ Загружено из облака!", "success");
+            } else {
+                showSyncStatus("ℹ️ Облако пусто, данные не загружены", "info");
+            }
+        } catch (error) {
+            console.error("Ошибка загрузки:", error);
+            showSyncStatus("❌ Ошибка загрузки: " + error.message, "error");
+        } finally {
+            isSyncing = false;
+        }
+    }
+
+    async function syncWithCloud() {
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("ВАШ_URL")) {
+            showSyncStatus("⚠️ Настройте GOOGLE_SCRIPT_URL в коде!", "warning");
+            return;
+        }
+        
+        showSyncStatus("☁️ Сохранение в облако...", "syncing");
+        isSyncing = true;
+        
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=save&spreadsheetId=${SPREADSHEET_ID}&data=${encodeURIComponent(JSON.stringify(employees))}`
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                showSyncStatus("✅ Сохранено в облако!", "success");
+            } else {
+                showSyncStatus("❌ Ошибка сохранения", "error");
+            }
+        } catch (error) {
+            console.error("Ошибка синхронизации:", error);
+            showSyncStatus("❌ Ошибка синхронизации: " + error.message, "error");
+        } finally {
+            isSyncing = false;
+        }
+    }
+
+    function showSyncStatus(msg, type) {
+        const statusText = document.getElementById('syncStatusText');
+        const syncDot = document.getElementById('syncDot');
+        statusText.textContent = msg;
+        
+        if (type === 'syncing') {
+            syncDot.className = 'sync-dot syncing';
+        } else {
+            syncDot.className = 'sync-dot';
+        }
+        
+        if (type !== 'syncing') {
+            setTimeout(() => {
+                if (document.getElementById('syncStatusText').textContent === msg) {
+                    statusText.textContent = 'Готово к работе';
+                }
+            }, 3000);
+        }
+    }
+
+    function saveToLocal() {
+        localStorage.setItem('shift_manager_full', JSON.stringify(employees));
+        localStorage.setItem('current_emp_full', currentEmployee);
+    }
+
+    // Остальные функции (без изменений, кроме saveData)
+    function saveData() {
+        saveToLocal();
+        // Авто-синхронизация при каждом изменении (можно закомментировать если нужно)
+        if (!isSyncing && GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("ВАШ_URL")) {
+            syncWithCloud();
+        }
+    }
+
+    function getFilterKey() {
+        if(currentFilter.month === 'all' || currentFilter.year === 'all') return null;
+        return `${currentFilter.year}_${currentFilter.month}`;
+    }
+
+    function getCurrentFilterMonthYear() {
+        if(currentFilter.month === 'all' || currentFilter.year === 'all') return null;
+        const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        return `${monthNames[parseInt(currentFilter.month)]} ${currentFilter.year}`;
+    }
+
+    function fillYearSelect() {
+        const yearSelect = document.getElementById('archiveYear');
+        const curYear = new Date().getFullYear();
+        yearSelect.innerHTML = '<option value="all">Все годы</option>';
+        for(let y=curYear-3; y<=curYear+2; y++) yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+        yearSelect.value = curYear;
+    }
+
+    function applyFilter() {
+        currentFilter.month = document.getElementById('archiveMonth').value;
+        currentFilter.year = document.getElementById('archiveYear').value;
+        const monthYearLabel = getCurrentFilterMonthYear();
+        document.getElementById('penaltyMonthYearLabel').innerText = monthYearLabel ? monthYearLabel : '(выберите месяц и год)';
+        renderShifts();
+        renderPenaltyList();
+    }
+
+    function getPeriodFromDate(dateStr) {
+        let day = parseInt(dateStr.split('.')[0]);
+        return day <= 15 ? "first" : "second";
+    }
+
+    function calculateSalary(rev, hook, tea, rate) {
+        let clean = Math.max(0, rev - hook - tea);
+        return { clean, salary: rate + (clean * 0.05) };
+    }
+
+    function filterShiftsByMonthYear(shifts) {
+        if (!shifts) return [];
+        const { month, year } = currentFilter;
+        return shifts.filter(s => {
+            let parts = s.date.split('.');
+            if(parts.length !== 3) return true;
+            let m = parseInt(parts[1])-1, y = parseInt(parts[2]);
+            return (month === 'all' || parseInt(month) === m) && (year === 'all' || parseInt(year) === y);
+        });
+    }
+
+    function getPenaltiesForCurrentFilter(emp) {
+        if(!emp || !emp.penaltiesByMonth) return [];
+        const filterKey = getFilterKey();
+        if(!filterKey) return [];
+        return emp.penaltiesByMonth[filterKey] || [];
+    }
+
+    function getPenaltiesForPeriod(emp, period, totalCleanPeriod) {
+        const penalties = getPenaltiesForCurrentFilter(emp);
+        let sum = 0;
+        for(let p of penalties) {
+            let matchesPeriod = (p.period === period || p.period === 'both');
+            if(matchesPeriod) {
+                if(p.type === 'percent') sum += (totalCleanPeriod * p.amount / 100);
+                else sum += p.amount;
+            }
+        }
+        return sum;
+    }
+
+    function getAllPenaltiesTotal(emp, totalCleanFirst, totalCleanSecond) {
+        let firstSum = getPenaltiesForPeriod(emp, 'first', totalCleanFirst);
+        let secondSum = getPenaltiesForPeriod(emp, 'second', totalCleanSecond);
+        let bothSum = getPenaltiesForPeriod(emp, 'both', totalCleanFirst + totalCleanSecond);
+        return { first: firstSum, second: secondSum, both: bothSum, total: firstSum + secondSum + bothSum };
+    }
+
+    function renderShifts() {
+        const tbody = document.getElementById("shiftTable");
+        const periodDiv = document.getElementById("periodStats");
+        tbody.innerHTML = "";
+        if (!currentEmployee || !employees[currentEmployee]) {
+            periodDiv.innerHTML = "👈 Выберите или создайте сотрудника";
+            document.getElementById('employeeTelegramId').value = "";
+            document.getElementById('currentEmpPenaltyLabel').innerText = "—";
+            document.getElementById('penaltyList').innerHTML = "";
+            return;
+        }
+        document.getElementById('currentEmpPenaltyLabel').innerText = currentEmployee;
+        document.getElementById('employeeTelegramId').value = employees[currentEmployee].telegramId || "";
+        renderPenaltyList();
+
+        let allShifts = employees[currentEmployee].shifts || [];
+        let filtered = filterShiftsByMonthYear(allShifts);
+        filtered.forEach((shift, idx) => {
+            let realIndex = allShifts.findIndex(s => s.date === shift.date && s.revenue === shift.revenue);
+            if(realIndex === -1) return;
+            let row = document.createElement("tr");
+            if(editingIndex === realIndex) {
+                row.innerHTML = `
+                    <td data-label="Дата">${shift.date}</td>
+                    <td data-label="Выручка"><input type="number" id="edit-rev" value="${shift.revenue}"></td>
+                    <td data-label="Кальяны"><input type="number" id="edit-hook" value="${shift.hookah}"></td>
+                    <td data-label="Чай"><input type="number" id="edit-tea" value="${shift.tea}"></td>
+                    <td data-label="Чистая">—</td>
+                    <td data-label="Ставка"><input type="number" id="edit-rate" value="${shift.fixedRate}"></td>
+                    <td data-label="Действия"><button class="save-btn" onclick="saveInline(${realIndex})">💾</button><button class="cancel-btn" onclick="cancelEdit()">✖️</button></td>
+                `;
+            } else {
+                row.innerHTML = `
+                    <td data-label="Дата">${shift.date}</td>
+                    <td data-label="Выручка">${shift.revenue.toLocaleString()} ₽</td>
+                    <td data-label="Кальяны">${shift.hookah.toLocaleString()} ₽</td>
+                    <td data-label="Чай">${shift.tea.toLocaleString()} ₽</td>
+                    <td data-label="Чистая">${shift.cleanRevenue.toLocaleString()} ₽</td>
+                    <td data-label="З/П"><b>${Math.round(shift.salary).toLocaleString()} ₽</b></td>
+                    <td data-label="Действия"><button class="edit-btn" onclick="startEdit(${realIndex})">✏️</button><button class="delete-btn" onclick="deleteShift(${realIndex})">🗑️</button></td>
+                `;
+            }
+            tbody.appendChild(row);
+        });
+
+        let period1 = { totalClean:0, totalSalary:0, count:0 };
+        let period2 = { totalClean:0, totalSalary:0, count:0 };
+        filtered.forEach(shift => {
+            if(getPeriodFromDate(shift.date) === "first") {
+                period1.totalClean += shift.cleanRevenue;
+                period1.totalSalary += shift.salary;
+                period1.count++;
+            } else {
+                period2.totalClean += shift.cleanRevenue;
+                period2.totalSalary += shift.salary;
+                period2.count++;
+            }
+        });
+
+        let penaltyTotals = getAllPenaltiesTotal(employees[currentEmployee], period1.totalClean, period2.totalClean);
+        let finalSalaryFirst = period1.totalSalary + penaltyTotals.first + (pen
